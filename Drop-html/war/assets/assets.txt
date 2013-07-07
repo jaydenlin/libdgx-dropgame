@@ -1,0 +1,9 @@
+d:
+b:.DS_Store
+i:bucket.png
+d:data
+b:data/.DS_Store
+i:data/libgdx.png
+a:drop.wav
+i:droplet.png
+a:rain.mp3
