@@ -1,5 +1,7 @@
 package com.me.dropgame;
 
+import java.util.Iterator;
+
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
@@ -11,8 +13,11 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.TimeUtils;
 
 public class dropgame implements ApplicationListener {
 	Texture dropImage;
@@ -22,7 +27,18 @@ public class dropgame implements ApplicationListener {
 	OrthographicCamera camera;
 	SpriteBatch batch;
 	Rectangle bucket;
+	Array<Rectangle> raindrops;
+	long lastDropTime;
 	
+	private void spawnRaindrop() {
+	      Rectangle raindrop = new Rectangle();
+	      raindrop.x = MathUtils.random(0, 800-64);
+	      raindrop.y = 480;
+	      raindrop.width = 64;
+	      raindrop.height = 64;
+	      raindrops.add(raindrop);
+	      lastDropTime = TimeUtils.nanoTime();
+	   }
 	@Override
 	public void create() {		
 		  camera = new OrthographicCamera();
@@ -35,6 +51,8 @@ public class dropgame implements ApplicationListener {
 		  bucket.width = 64;
 		  bucket.height = 64;
 		   
+		  raindrops = new Array<Rectangle>();
+		  spawnRaindrop();
 		// load the images for the droplet and the bucket, 64x64 pixels each
 	      dropImage = new Texture(Gdx.files.internal("droplet.png"));
 	      bucketImage = new Texture(Gdx.files.internal("bucket.png"));
@@ -50,7 +68,11 @@ public class dropgame implements ApplicationListener {
 
 	@Override
 	public void dispose() {
-		
+		  dropImage.dispose();
+	      bucketImage.dispose();
+	      dropSound.dispose();
+	      rainMusic.dispose();
+	      batch.dispose();
 	}
 
 	@Override
@@ -69,6 +91,22 @@ public class dropgame implements ApplicationListener {
 	        camera.unproject(touchPos);
 	        bucket.x = touchPos.x - 64 / 2;
 	     }
+	    
+	    if(TimeUtils.nanoTime() - lastDropTime > 1000000000) spawnRaindrop();
+	    
+	    Iterator<Rectangle> iter = raindrops.iterator();
+	    while(iter.hasNext()) {
+	       Rectangle raindrop = iter.next();
+	       raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
+	       if(raindrop.y + 64 < 0) iter.remove();
+	    }
+	    
+	    batch.begin();
+	    batch.draw(bucketImage, bucket.x, bucket.y);
+	    for(Rectangle raindrop: raindrops) {
+	       batch.draw(dropImage, raindrop.x, raindrop.y);
+	    }
+	    batch.end();
 		
 	}
 
